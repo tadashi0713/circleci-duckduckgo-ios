@@ -13,61 +13,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 # Available Actions
 
-### sync_signing
+### unit_test
 
 ```sh
-[bundle exec] fastlane sync_signing
+[bundle exec] fastlane unit_test
 ```
 
-Fetches and updates certificates and provisioning profiles for App Store distribution
-
-### sync_signing_adhoc
-
-```sh
-[bundle exec] fastlane sync_signing_adhoc
-```
-
-Fetches and updates certificates and provisioning profiles for Ad-Hoc distribution
-
-### adhoc
-
-```sh
-[bundle exec] fastlane adhoc
-```
-
-Makes Ad-Hoc build with a specified name in a given directory
-
-### release_appstore
-
-```sh
-[bundle exec] fastlane release_appstore
-```
-
-Makes App Store release build and uploads it to App Store Connect
-
-### upload_metadata
-
-```sh
-[bundle exec] fastlane upload_metadata
-```
-
-Updates App Store metadata
-
-### release_testflight
-
-```sh
-[bundle exec] fastlane release_testflight
-```
-
-Makes App Store release build and uploads it to TestFlight
-
-### increment_build_number_for_version
-
-```sh
-[bundle exec] fastlane increment_build_number_for_version
-```
-
-Increment build number based on version in App Store Connect
+Run UnitTests
 
 ----
 
