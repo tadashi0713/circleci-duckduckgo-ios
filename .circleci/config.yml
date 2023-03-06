@@ -1,0 +1,23 @@
+version: 2.1
+
+orbs:
+  ruby: circleci/ruby@2.0.0
+  macos: circleci/macos@2.3.4
+
+jobs:
+  unit_test:
+    macos:
+      xcode: 14.2.0
+    resource_class: macos.m1.large.gen1
+    steps:
+      - macos/preboot-simulator:
+          device: iPhone 13
+          version: "15.5"
+      - checkout
+      - run: git submodule update --init --recursive
+      - ruby/install-deps
+
+workflows:
+  say-hello-workflow:
+    jobs:
+      - unit_test
