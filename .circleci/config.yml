@@ -5,7 +5,7 @@ orbs:
   macos: circleci/macos@2.3.4
 
 jobs:
-  unit_test:
+  integration_test:
     macos:
       xcode: 14.2.0
     resource_class: macos.m1.large.gen1
@@ -16,8 +16,9 @@ jobs:
       - checkout
       - run: git submodule update --init --recursive
       - ruby/install-deps
+      - run: bundle exec fastlane integration_test
 
 workflows:
   say-hello-workflow:
     jobs:
-      - unit_test
+      - integration_test
