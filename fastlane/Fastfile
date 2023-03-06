@@ -7,7 +7,7 @@ end
 desc "Run Integration Tests"
 lane :integration_test do
   run_tests(
-    scheme: "CircleCIDemoUITests",
+    scheme: "IntegrationTests",
     device: "iPhone 13 (15.5)"
   )
 end
