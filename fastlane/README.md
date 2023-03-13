@@ -13,13 +13,21 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 # Available Actions
 
-### integration_test
+### atb_uitests
 
 ```sh
-[bundle exec] fastlane integration_test
+[bundle exec] fastlane atb_uitests
 ```
 
-Run Integration Tests
+
+
+### unittests
+
+```sh
+[bundle exec] fastlane unittests
+```
+
+
 
 ----
 

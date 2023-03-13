@@ -76,11 +76,11 @@ class AtbIntegrationTests: XCTestCase {
         waitForRequests()
     }
 
-//    func testRelaunchCausesAtbRequests() {
-//        requests = 0 // Reset to ensure test launch of the app doesn't register as a false positive
-//        backgroundRelaunch()
-//        waitForRequests()
-//    }
+    func testRelaunchCausesAtbRequests() {
+        requests = 0 // Reset to ensure test launch of the app doesn't register as a false positive
+        backgroundRelaunch()
+        waitForRequests()
+    }
 
     func backgroundRelaunch() {
         XCUIDevice.shared.press(.home)

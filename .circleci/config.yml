@@ -16,7 +16,7 @@ jobs:
       - checkout
       - run: git submodule update --init --recursive
       - ruby/install-deps
-      - run: bundle exec fastlane integration_test
+      - run: bundle exec fastlane atb_uitests
 
 workflows:
   say-hello-workflow:
