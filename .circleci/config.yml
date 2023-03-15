@@ -18,7 +18,18 @@ jobs:
       - ruby/install-deps
       - run: bundle exec fastlane atb_uitests
 
+  unittest:
+    macos:
+      xcode: 14.2.0
+    resource_class: macos.m1.large.gen1
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - ruby/install-deps
+      - run: bundle exec fastlane unittests
+
 workflows:
   say-hello-workflow:
     jobs:
       - integration_test
+      - unittest
