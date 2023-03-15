@@ -11,7 +11,7 @@ jobs:
     resource_class: macos.m1.large.gen1
     steps:
       - macos/preboot-simulator:
-          device: iPhone 8
+          device: iPhone 14
           version: "16.2"
       - checkout
       - run: git submodule update --init --recursive

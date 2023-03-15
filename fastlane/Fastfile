@@ -7,13 +7,13 @@ end
 lane :atb_uitests do
   run_tests(
     scheme: "AtbUITests",
-    device: "iPhone 8 (16.2)"
+    device: "iPhone 14 (16.2)"
   )
 end
 
 lane :unittests do
   run_tests(
     scheme: "UnitTests",
-    device: "iPhone 8 (16.2)"
+    device: "iPhone 14 (16.2)"
   )
 end
