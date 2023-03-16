@@ -13,13 +13,13 @@ commands:
       - restore_cache:
           name: Restore SPM Cache
           keys:
-            - spm-cache-v1-{{ checksum "./Kickstarter.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}-{{ checksum "xcode_version.txt" }}-{{ arch }}
+            - spm-cache-v1-{{ checksum "./DuckDuckGo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}-{{ checksum "xcode_version.txt" }}-{{ arch }}
       - run:
           name: Bootstrap SPM
           command: xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath SourcePackages
       - save_cache:
           name: Cache SPM
-          key: spm-cache-v1-{{ checksum "./Kickstarter.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}-{{ checksum "xcode_version.txt" }}-{{ arch }}
+          key: spm-cache-v1-{{ checksum "./DuckDuckGo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}-{{ checksum "xcode_version.txt" }}-{{ arch }}
           paths:
             - SourcePackages
 
