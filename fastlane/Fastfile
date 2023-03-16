@@ -14,6 +14,7 @@ end
 lane :unittests do
   run_tests(
     scheme: "UnitTests",
-    device: "iPhone 14 (16.2)"
+    device: "iPhone 14 (16.2)",
+    derived_data_path: "dist"
   )
 end
