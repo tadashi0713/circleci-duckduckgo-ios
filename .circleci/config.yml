@@ -18,7 +18,7 @@ jobs:
       - ruby/install-deps
       - run: bundle exec fastlane atb_uitests
       - store_test_results:
-          path: fastlane/test_output/report.junit
+          path: fastlane/report.xml
 
   unittest:
     macos:
@@ -33,7 +33,7 @@ jobs:
       - ruby/install-deps
       - run: bundle exec fastlane unittests
       - store_test_results:
-          path: fastlane/test_output/report.junit
+          path: fastlane/report.xml
 
 workflows:
   say-hello-workflow:
