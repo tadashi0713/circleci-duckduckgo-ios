@@ -16,8 +16,8 @@ jobs:
       - checkout
       - run: git submodule update --init --recursive
       - ruby/install-deps
-      - run: bundle exec fastlane atb_uitests
       - run: bundle exec fastlane integration_tests
+      - run: bundle exec fastlane atb_uitests
       - store_test_results:
           path: fastlane/report.xml
 
