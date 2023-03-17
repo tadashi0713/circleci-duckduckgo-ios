@@ -19,3 +19,12 @@ lane :unittests do
     derived_data_path: "dist"
   )
 end
+
+lane :build do
+  match(type: "adhoc")
+  build_app(
+    scheme: "AdhocDebug",
+    export_method: "ad-hoc",
+    derived_data_path: "dist"
+  )
+end
