@@ -17,6 +17,8 @@ jobs:
       - run: git submodule update --init --recursive
       - ruby/install-deps
       - run: bundle exec fastlane atb_uitests
+      - store_test_results:
+          path: fastlane/test_output/report.junit
 
   unittest:
     macos:
@@ -30,6 +32,8 @@ jobs:
       - run: git submodule update --init --recursive
       - ruby/install-deps
       - run: bundle exec fastlane unittests
+      - store_test_results:
+          path: fastlane/test_output/report.junit
 
 workflows:
   say-hello-workflow:
