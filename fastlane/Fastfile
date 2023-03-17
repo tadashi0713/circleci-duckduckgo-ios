@@ -23,7 +23,8 @@ end
 lane :build do
   match(type: "adhoc")
   build_app(
-    scheme: "AdhocDebug",
+    scheme: "DuckDuckGo",
+    configuration: "Debug",
     export_method: "ad-hoc",
     derived_data_path: "dist"
   )
