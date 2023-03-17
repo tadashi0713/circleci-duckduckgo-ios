@@ -4,17 +4,25 @@ before_all do
   setup_ci if is_ci
 end
 
-lane :atb_uitests do
+lane :unit_tests do
   run_tests(
-    scheme: "AtbUITests",
+    scheme: "UnitTests",
     device: "iPhone 14 (16.2)",
     derived_data_path: "dist"
   )
 end
 
-lane :unittests do
+lane :integration_tests do
   run_tests(
-    scheme: "UnitTests",
+    scheme: "IntegrationTests",
+    device: "iPhone 14 (16.2)",
+    derived_data_path: "dist"
+  )
+end
+
+lane :atb_uitests do
+  run_tests(
+    scheme: "AtbUITests",
     device: "iPhone 14 (16.2)",
     derived_data_path: "dist"
   )

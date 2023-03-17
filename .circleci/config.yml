@@ -17,10 +17,11 @@ jobs:
       - run: git submodule update --init --recursive
       - ruby/install-deps
       - run: bundle exec fastlane atb_uitests
+      - run: bundle exec fastlane integration_tests
       - store_test_results:
           path: fastlane/report.xml
 
-  unittest:
+  unit_test:
     macos:
       xcode: 14.2.0
     resource_class: macos.m1.large.gen1
@@ -31,7 +32,7 @@ jobs:
       - checkout
       - run: git submodule update --init --recursive
       - ruby/install-deps
-      - run: bundle exec fastlane unittests
+      - run: bundle exec fastlane unit_tests
       - store_test_results:
           path: fastlane/report.xml
 
@@ -39,4 +40,4 @@ workflows:
   say-hello-workflow:
     jobs:
       - integration_test
-      - unittest
+      - unit_test
