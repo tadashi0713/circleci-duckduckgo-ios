@@ -5,6 +5,21 @@ orbs:
   macos: circleci/macos@2.3.4
 
 jobs:
+  unit_test:
+    macos:
+      xcode: 14.2.0
+    resource_class: macos.m1.large.gen1
+    steps:
+      - macos/preboot-simulator:
+          device: iPhone 14
+          version: "16.2"
+      - checkout
+      - run: git submodule update --init --recursive
+      - ruby/install-deps
+      - run: bundle exec fastlane unit_tests
+      - store_test_results:
+          path: fastlane/report.xml
+
   integration_test:
     macos:
       xcode: 14.2.0
@@ -21,23 +36,21 @@ jobs:
       - store_test_results:
           path: fastlane/report.xml
 
-  unit_test:
+  build:
     macos:
       xcode: 14.2.0
     resource_class: macos.m1.large.gen1
     steps:
-      - macos/preboot-simulator:
-          device: iPhone 14
-          version: "16.2"
       - checkout
       - run: git submodule update --init --recursive
       - ruby/install-deps
-      - run: bundle exec fastlane unit_tests
-      - store_test_results:
-          path: fastlane/report.xml
+      - run: bundle exec fastlane build
 
 workflows:
   say-hello-workflow:
     jobs:
-      - integration_test
       - unit_test
+      - integration_test
+      - build:
+          context:
+            - mobile
