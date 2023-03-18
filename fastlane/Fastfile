@@ -34,6 +34,7 @@ lane :build do
     configuration: "Debug",
     skip_codesigning: true,
     skip_package_ipa: true,
-    derived_data_path: "dist"
+    derived_data_path: "dist",
+    cloned_source_packages_path: "SourcePackages"
   )
 end

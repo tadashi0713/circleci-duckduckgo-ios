@@ -43,7 +43,13 @@ jobs:
     steps:
       - checkout
       - run: git submodule update --init --recursive
+      - restore_cache: 
+          key: spm-cache-{{ checksum "./DuckDuckGo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}
       - ruby/install-deps
+      - save_cache:
+          paths:
+            - SourcePackages/
+          key: spm-cache-{{ checksum "./DuckDuckGo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}
       - run: bundle exec fastlane build
 
 workflows:
