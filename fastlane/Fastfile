@@ -33,6 +33,7 @@ lane :build do
     scheme: "DuckDuckGo",
     configuration: "Debug",
     skip_codesigning: true,
+    skip_package_ipa: true,
     derived_data_path: "dist"
   )
 end
