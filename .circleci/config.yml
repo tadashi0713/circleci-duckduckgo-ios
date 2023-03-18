@@ -1,0 +1,79 @@
+version: 2.1
+
+orbs:
+  ruby: circleci/ruby@2.0.0
+  macos: circleci/macos@2.3.4
+
+executors:
+  gen2_medium:
+    macos:
+      xcode: 14.2.0
+    resource_class: macos.x86.medium.gen2
+  m1_large:
+    macos:
+      xcode: 14.2.0
+    resource_class: macos.m1.large.gen1
+
+jobs:
+  unit_test:
+    parameters:
+      executor:
+        type: executor
+    executor: << parameters.executor >>
+    steps:
+      - macos/preboot-simulator:
+          device: iPhone 14
+          version: "16.2"
+      - checkout
+      - run: git submodule update --init --recursive
+      - ruby/install-deps
+      - run: bundle exec fastlane unit_tests
+      - store_test_results:
+          path: fastlane/report.xml
+
+  integration_test:
+    parameters:
+      executor:
+        type: executor
+    executor: << parameters.executor >>
+    steps:
+      - macos/preboot-simulator:
+          device: iPhone 14
+          version: "16.2"
+      - checkout
+      - run: git submodule update --init --recursive
+      - ruby/install-deps
+      - run: bundle exec fastlane integration_tests
+      - run: bundle exec fastlane atb_uitests
+      - store_test_results:
+          path: fastlane/report.xml
+
+  build:
+    parameters:
+      executor:
+        type: executor
+    executor: << parameters.executor >>
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - ruby/install-deps
+      - run: bundle exec fastlane build
+
+workflows:
+  m1_large_workflow:
+    jobs:
+      - unit_test:
+          executor: m1_large
+      - integration_test:
+          executor: m1_large
+      - build:
+          executor: m1_large
+
+  gen2_medium_workflow:
+    jobs:
+      - unit_test:
+          executor: gen2_medium
+      - integration_test:
+          executor: gen2_medium
+      - build:
+          executor: gen2_medium
