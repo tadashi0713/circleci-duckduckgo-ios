@@ -29,11 +29,10 @@ lane :atb_uitests do
 end
 
 lane :build do
-  match(type: "adhoc")
   build_app(
     scheme: "DuckDuckGo",
     configuration: "Debug",
-    export_method: "ad-hoc",
+    skip_codesigning: true,
     derived_data_path: "dist"
   )
 end

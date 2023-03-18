@@ -51,6 +51,4 @@ workflows:
     jobs:
       - unit_test
       - integration_test
-      - build:
-          context:
-            - mobile
+      - build
