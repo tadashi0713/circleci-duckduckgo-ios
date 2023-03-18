@@ -4,11 +4,19 @@ orbs:
   ruby: circleci/ruby@2.0.0
   macos: circleci/macos@2.3.4
 
-jobs:
-  unit_test:
+executors:
+  medium_gen2:
+    macos:
+      xcode: 14.2.0
+    resource_class: macos.x86.medium.gen2
+  m1_large:
     macos:
       xcode: 14.2.0
     resource_class: macos.m1.large.gen1
+
+jobs:
+  unit_test:
+    executor: m1_large
     steps:
       - macos/preboot-simulator:
           device: iPhone 14
@@ -21,9 +29,7 @@ jobs:
           path: fastlane/report.xml
 
   integration_test:
-    macos:
-      xcode: 14.2.0
-    resource_class: macos.m1.large.gen1
+    executor: m1_large
     steps:
       - macos/preboot-simulator:
           device: iPhone 14
@@ -37,23 +43,15 @@ jobs:
           path: fastlane/report.xml
 
   build:
-    macos:
-      xcode: 14.2.0
-    resource_class: macos.m1.large.gen1
+    executor: m1_large
     steps:
       - checkout
       - run: git submodule update --init --recursive
-      - restore_cache: 
-          key: spm-cache-{{ checksum "DuckDuckGo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}
       - ruby/install-deps
-      - save_cache:
-          paths:
-            - SourcePackages/
-          key: spm-cache-{{ checksum "DuckDuckGo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" }}
       - run: bundle exec fastlane build
 
 workflows:
-  say-hello-workflow:
+  m1_large_workflow:
     jobs:
       - unit_test
       - integration_test
