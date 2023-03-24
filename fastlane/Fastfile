@@ -28,6 +28,14 @@ lane :atb_uitests do
   )
 end
 
+lane :performance_tests do
+  run_tests(
+    scheme: "PerformanceTests",
+    device: "iPhone 14 (16.2)",
+    derived_data_path: "dist"
+  )
+end
+
 lane :build do
   build_app(
     scheme: "DuckDuckGo",
