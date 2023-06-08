@@ -19,8 +19,8 @@
 
 import Foundation
 import BrowserServicesKit
+import Common
 import Core
-import os.log
 import Bookmarks
 
 final class HomePageConfiguration {
@@ -29,6 +29,7 @@ final class HomePageConfiguration {
         case navigationBarSearch(fixed: Bool)
         case favorites
         case homeMessage
+        case appTrackingProtection
     }
 
     func components(favoritesViewModel: FavoritesListInteracting) -> [Component] {
@@ -36,6 +37,7 @@ final class HomePageConfiguration {
         return [
             .navigationBarSearch(fixed: fixed),
             .homeMessage,
+            .appTrackingProtection,
             .favorites
         ]
     }

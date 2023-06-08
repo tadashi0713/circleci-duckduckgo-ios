@@ -19,10 +19,12 @@
 
 import UIKit
 import WebKit
+import Combine
+import Common
 import Core
+import DDGSync
 import Lottie
 import Kingfisher
-import os.log
 import BrowserServicesKit
 import Bookmarks
 import Persistence
@@ -99,9 +101,15 @@ class MainViewController: UIViewController {
     fileprivate lazy var appSettings: AppSettings = AppUserDefaults()
     private var launchTabObserver: LaunchTabNotification.Observer?
     
+    private let appTrackingProtectionDatabase: CoreDataDatabase
     private let bookmarksDatabase: CoreDataDatabase
+    private let bookmarksDatabaseCleaner: BookmarkDatabaseCleaner
     private let favoritesViewModel: FavoritesListInteracting
-    
+    private let syncService: DDGSyncing
+    private var syncStateCancellable: AnyCancellable?
+    private var localUpdatesCancellable: AnyCancellable?
+    private var syncUpdatesCancellable: AnyCancellable?
+
     lazy var menuBookmarksViewModel: MenuBookmarksInteracting = MenuBookmarksViewModel(bookmarksDatabase: bookmarksDatabase)
 
     weak var tabSwitcherController: TabSwitcherViewController?
@@ -129,15 +137,25 @@ class MainViewController: UIViewController {
     
     // Skip SERP flow (focusing on autocomplete logic) and prepare for new navigation when selecting search bar
     private var skipSERPFlow = true
-    
+
     required init?(coder: NSCoder,
-                   bookmarksDatabase: CoreDataDatabase) {
+                   bookmarksDatabase: CoreDataDatabase,
+                   appTrackingProtectionDatabase: CoreDataDatabase,
+                   syncService: DDGSyncing) {
+        self.appTrackingProtectionDatabase = appTrackingProtectionDatabase
         self.bookmarksDatabase = bookmarksDatabase
+        self.bookmarksDatabaseCleaner = BookmarkDatabaseCleaner(
+            bookmarkDatabase: bookmarksDatabase,
+            errorEvents: BookmarksCleanupErrorHandling(),
+            log: .generalLog
+        )
+        self.syncService = syncService
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         super.init(coder: coder)
+        bindSyncService()
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("Use init?(code:")
     }
@@ -304,7 +322,35 @@ class MainViewController: UIViewController {
         gestureBookmarksButton.delegate = self
         gestureBookmarksButton.image = UIImage(named: "Bookmarks")
     }
-    
+
+    private func bindSyncService() {
+        syncStateCancellable = syncService.authStatePublisher
+            .prepend(syncService.authState)
+            .map { $0 == .inactive }
+            .removeDuplicates()
+            .sink { [weak self] isSyncDisabled in
+                self?.bookmarksDatabaseCleaner.cleanUpDatabaseNow()
+                if isSyncDisabled {
+                    self?.bookmarksDatabaseCleaner.scheduleRegularCleaning()
+                } else {
+                    self?.bookmarksDatabaseCleaner.cancelCleaningSchedule()
+                }
+            }
+
+        localUpdatesCancellable = favoritesViewModel.localUpdates
+            .sink { [weak self] in
+                self?.syncService.scheduler.notifyDataChanged()
+            }
+
+        syncUpdatesCancellable = (UIApplication.shared.delegate as? AppDelegate)?.syncDataProviders.bookmarksAdapter.syncDidCompletePublisher
+            .sink { [weak self] _ in
+                self?.favoritesViewModel.reloadData()
+                DispatchQueue.main.async {
+                    self?.homeController?.collectionView.reloadData()
+                }
+            }
+    }
+
     @objc func quickSaveBookmarkLongPress(gesture: UILongPressGestureRecognizer) {
         if gesture.state == .began {
             quickSaveBookmark()
@@ -334,13 +380,16 @@ class MainViewController: UIViewController {
             return
         }
         
-        if let navController = segue.destination as? UINavigationController,
-            let brokenSiteScreen = navController.topViewController as? ReportBrokenSiteViewController {
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                segue.destination.modalPresentationStyle = .formSheet
+        if let navController = segue.destination as? UINavigationController {
+            if let brokenSiteScreen = navController.topViewController as? ReportBrokenSiteViewController {
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    segue.destination.modalPresentationStyle = .formSheet
+                }
+                
+                brokenSiteScreen.brokenSiteInfo = currentTab?.getCurrentWebsiteInfo()
+            } else if let settingsScreen = navController.topViewController as? SettingsViewController {
+                settingsScreen.appTPDatabase = self.appTrackingProtectionDatabase
             }
-            
-            brokenSiteScreen.brokenSiteInfo = currentTab?.getCurrentWebsiteInfo()
         }
 
         if var onboarding = segue.destination as? Onboarding {
@@ -376,7 +425,8 @@ class MainViewController: UIViewController {
     @IBSegueAction func onCreateBookmarksList(_ coder: NSCoder, sender: Any?, segueIdentifier: String?) -> BookmarksViewController {
         guard let controller = BookmarksViewController(coder: coder,
                                                        bookmarksDatabase: self.bookmarksDatabase,
-                                                       bookmarksSearch: bookmarksCachingSearch) else {
+                                                       bookmarksSearch: bookmarksCachingSearch,
+                                                       syncService: syncService) else {
             fatalError("Failed to create controller")
         }
         controller.delegate = self
@@ -450,6 +500,7 @@ class MainViewController: UIViewController {
         tabManager = TabManager(model: tabsModel,
                                 previewsSource: previewsSource,
                                 bookmarksDatabase: bookmarksDatabase,
+                                syncService: syncService,
                                 delegate: self)
     }
 
@@ -504,7 +555,9 @@ class MainViewController: UIViewController {
         removeHomeScreen()
 
         let tabModel = currentTab?.tabModel
-        let controller = HomeViewController.loadFromStoryboard(model: tabModel!, favoritesViewModel: favoritesViewModel)
+        let controller = HomeViewController.loadFromStoryboard(model: tabModel!,
+                                                               favoritesViewModel: favoritesViewModel,
+                                                               appTPDatabase: appTrackingProtectionDatabase)
         homeController = controller
 
         controller.chromeDelegate = self
@@ -523,7 +576,6 @@ class MainViewController: UIViewController {
 
     @IBAction func onFirePressed() {
         Pixel.fire(pixel: .forgetAllPressedBrowsing)
-        DailyPixel.fire(pixel: .experimentDailyFireButtonTapped)
         
         wakeLazyFireButtonAnimator()
         
@@ -1333,7 +1385,7 @@ extension MainViewController: FavoritesOverlayDelegate {
         Pixel.fire(pixel: .homeScreenFavouriteLaunched)
         homeController?.chromeDelegate = nil
         dismissOmniBar()
-        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .bookmarks, fromCache: .tabs)
+        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
         if url.isBookmarklet() {
             executeBookmarklet(url)
         } else {
@@ -1783,6 +1835,11 @@ extension MainViewController: AutoClearWorker {
         }
         
         AutoconsentManagement.shared.clearCache()
+        DaxDialogs.shared.clearHeldURLData()
+
+        if syncService.authState == .inactive {
+            bookmarksDatabaseCleaner.cleanUpDatabaseNow()
+        }
     }
     
     func stopAllOngoingDownloads() {
@@ -1792,7 +1849,6 @@ extension MainViewController: AutoClearWorker {
     func forgetAllWithAnimation(transitionCompletion: (() -> Void)? = nil, showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)
-        DailyPixel.fire(pixel: .experimentDailyFireButtonDataCleared)
         
         self.tabCountInfo = tabManager.makeTabCountInfo()
         
@@ -1850,10 +1906,10 @@ extension MainViewController: Themable {
         if AppWidthObserver.shared.isLargeWidth {
             statusBarBackground.backgroundColor = theme.tabsBarBackgroundColor
         } else {
-            statusBarBackground.backgroundColor = theme.barBackgroundColor
+            statusBarBackground.backgroundColor = theme.omniBarBackgroundColor
         }
 
-        view.backgroundColor = theme.backgroundColor
+        view.backgroundColor = theme.mainViewBackgroundColor
 
         customNavigationBar?.backgroundColor = theme.barBackgroundColor
         customNavigationBar?.tintColor = theme.barTintColor

@@ -21,8 +21,13 @@ import UIKit
 import MessageUI
 import Core
 import BrowserServicesKit
+import Persistence
 import SwiftUI
 import Common
+
+#if APP_TRACKING_PROTECTION
+import NetworkExtension
+#endif
 
 // swiftlint:disable file_length type_body_length
 class SettingsViewController: UITableViewController {
@@ -50,6 +55,7 @@ class SettingsViewController: UITableViewController {
     @IBOutlet weak var macBrowserWaitlistAccessoryText: UILabel!
     @IBOutlet weak var windowsBrowserWaitlistCell: UITableViewCell!
     @IBOutlet weak var windowsBrowserWaitlistAccessoryText: UILabel!
+    @IBOutlet weak var appTPCell: UITableViewCell!
     @IBOutlet weak var longPressCell: UITableViewCell!
     @IBOutlet weak var versionCell: UITableViewCell!
     @IBOutlet weak var textSizeCell: UITableViewCell!
@@ -66,7 +72,11 @@ class SettingsViewController: UITableViewController {
     
     private let syncSectionIndex = 1
     private let autofillSectionIndex = 2
-    private let debugSectionIndex = 7
+    private let appearanceSectionIndex = 3
+    private let moreFromDDGSectionIndex = 6
+    private let debugSectionIndex = 8
+    
+    public var appTPDatabase: CoreDataDatabase!
 
     private lazy var emailManager = EmailManager()
     
@@ -77,7 +87,7 @@ class SettingsViewController: UITableViewController {
     fileprivate lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
 
     private var shouldShowDebugCell: Bool {
-        return featureFlagger.isFeatureOn(.debugMenu)
+        return featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild
     }
     
     private var shouldShowVoiceSearchCell: Bool {
@@ -85,11 +95,19 @@ class SettingsViewController: UITableViewController {
     }
 
     private lazy var shouldShowAutofillCell: Bool = {
-        return featureFlagger.isFeatureOn(.autofill)
+        return featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
     }()
 
     private lazy var shouldShowSyncCell: Bool = {
         return featureFlagger.isFeatureOn(.sync)
+    }()
+    
+    private lazy var shouldShowAppTPCell: Bool = {
+#if APP_TRACKING_PROTECTION
+        return featureFlagger.isFeatureOn(.appTrackingProtection)
+#else
+        return false
+#endif
     }()
 
     static func loadFromStoryboard() -> UIViewController {
@@ -128,6 +146,7 @@ class SettingsViewController: UITableViewController {
         configureEmailProtectionAccessoryText()
         configureMacBrowserWaitlistCell()
         configureWindowsBrowserWaitlistCell()
+        configureAppTPCell()
         
         // Make sure muliline labels are correctly presented
         tableView.setNeedsLayout()
@@ -247,6 +266,22 @@ class SettingsViewController: UITableViewController {
             windowsBrowserWaitlistCell.detailTextLabel?.text = WindowsBrowserWaitlist.shared.settingsSubtitle
         }
     }
+    
+    private func configureAppTPCell() {
+        appTPCell.isHidden = !shouldShowAppTPCell
+
+#if APP_TRACKING_PROTECTION
+        Task { @MainActor in
+            let fwm = FirewallManager()
+            await fwm.refreshManager()
+            if UserDefaults().bool(forKey: UserDefaultsWrapper<Any>.Key.appTPUsed.rawValue) && fwm.status() != .connected {
+                appTPCell.detailTextLabel?.text = UserText.appTPCellDisabled
+            } else {
+                appTPCell.detailTextLabel?.text = UserText.appTPCellDetail
+            }
+        }
+#endif
+    }
 
     private func configureDebugCell() {
         debugCell.isHidden = !shouldShowDebugCell
@@ -287,6 +322,15 @@ class SettingsViewController: UITableViewController {
         navigationController?.pushViewController(MacWaitlistViewController(nibName: nil, bundle: nil), animated: true)
     }
 
+#if APP_TRACKING_PROTECTION
+    private func showAppTP() {
+        navigationController?.pushViewController(
+            AppTPActivityHostingViewController(appTrackingProtectionDatabase: appTPDatabase),
+            animated: true
+        )
+    }
+#endif
+
     private func showWindowsBrowserWaitlistViewController() {
         navigationController?.pushViewController(WindowsWaitlistViewController(nibName: nil, bundle: nil), animated: true)
     }
@@ -322,6 +366,13 @@ class SettingsViewController: UITableViewController {
         case syncCell:
             showSync()
 
+        case appTPCell:
+#if APP_TRACKING_PROTECTION
+            showAppTP()
+#else
+            break
+#endif
+            
         default: break
         }
         
@@ -383,6 +434,8 @@ class SettingsViewController: UITableViewController {
             return CGFloat.leastNonzeroMagnitude
         } else if debugSectionIndex == section && !shouldShowDebugCell {
             return CGFloat.leastNonzeroMagnitude
+        } else if moreFromDDGSectionIndex == section && !shouldShowAppTPCell {
+            return CGFloat.leastNonzeroMagnitude
         } else {
             return super.tableView(tableView, heightForFooterInSection: section)
         }
@@ -390,6 +443,17 @@ class SettingsViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
         return super.tableView(tableView, titleForFooterInSection: section)
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        let rows = super.tableView(tableView, numberOfRowsInSection: section)
+        if section == appearanceSectionIndex && textSizeCell.isHidden {
+            return rows - 1
+        } else if section == moreFromDDGSectionIndex && appTPCell.isHidden {
+            return rows - 1
+        } else {
+            return rows
+        }
     }
 
     @IBAction func onVoiceSearchToggled(_ sender: UISwitch) {
@@ -438,6 +502,8 @@ class SettingsViewController: UITableViewController {
 extension SettingsViewController: Themable {
     
     func decorate(with theme: Theme) {
+        view.backgroundColor = theme.backgroundColor
+
         decorateNavigationBar(with: theme)
         configureThemeCellAccessory()
         

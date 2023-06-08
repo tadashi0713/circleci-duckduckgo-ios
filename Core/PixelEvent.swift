@@ -23,9 +23,9 @@ import Bookmarks
 import Configuration
 
 // swiftlint:disable file_length
-// swiftlint:disable type_body_length
 extension Pixel {
-    
+
+    // swiftlint:disable:next type_body_length
     public enum Event {
         
         case appLaunch
@@ -242,7 +242,11 @@ extension Pixel {
         case autofillLoginsSettingsEnabled
         case autofillLoginsSettingsDisabled
         case autofillLoginsSettingsAddNewLoginErrorAttemptedToCreateDuplicate
-        
+
+        case autofillLoginsPasswordGenerationPromptDisplayed
+        case autofillLoginsPasswordGenerationPromptConfirmed
+        case autofillLoginsPasswordGenerationPromptDismissed
+
         case autofillJSPixelFired(_ pixel: AutofillUserScript.JSPixel)
         
         case secureVaultInitError
@@ -264,6 +268,32 @@ extension Pixel {
         
         case serpRequerySame
         case serpRequeryNew
+        
+        // MARK: AppTP
+        case appTPBreakageReport
+
+        case appTPFailedToCreateProxyServer
+        case appTPFailedToSetTunnelNetworkSettings
+        case appTPFailedToAccessPreferences
+        case appTPFailedToAccessPreferencesDuringSetup
+        case appTPFailedToStartTunnel
+
+        case appTPVPNCrash
+        case appTPVPNDisconnect
+        case appTPVPNSleep
+        case appTPVPNWake
+        
+        case appTPBlocklistParseFailed
+        case appTPActiveUser
+        
+        case appTPDBLocationFailed
+        case appTPDBStoreLoadFailure
+        case appTPDBPersistentStoreLoadFailure
+        case appTPDBHistoryFailure
+        case appTPDBHistoryFetchFailure
+        case appTPDBFeedbackTrackerFetchFailed
+        case appTPDBTrackerStoreFailure
+        case appTPCouldNotLoadDatabase
 
         // MARK: remote messaging pixels
 
@@ -359,6 +389,8 @@ extension Pixel {
         case debugMissingTopFolderFixHasBookmarks
         
         case debugCantSaveBookmarkFix
+
+        case debugCannotClearObservationsDatabase
         
         // Errors from Bookmarks Module
         case bookmarkFolderExpected
@@ -373,17 +405,20 @@ extension Pixel {
         
         case bookmarksCouldNotLoadDatabase
         case bookmarksCouldNotPrepareDatabase
+        case bookmarksCleanupFailed
         case bookmarksMigrationAlreadyPerformed
         case bookmarksMigrationFailed
         case bookmarksMigrationCouldNotPrepareDatabase
         case bookmarksMigrationCouldNotPrepareDatabaseOnFailedMigration
         case bookmarksMigrationCouldNotValidateDatabase
         case bookmarksMigrationCouldNotRemoveOldStore
-        
+
+        case syncSentUnauthenticatedRequest
+        case syncMetadataCouldNotLoadDatabase
+        case syncBookmarksProviderInitializationFailed
+        case syncBookmarksFailed
+
         case invalidPayload(Configuration)
-      
-        case experimentDailyFireButtonTapped
-        case experimentDailyFireButtonDataCleared
     }
     
 }
@@ -616,7 +651,11 @@ extension Pixel.Event {
         case .autofillLoginsSettingsDisabled: return "m_autofill_logins_settings_disabled"
         case .autofillLoginsSettingsAddNewLoginErrorAttemptedToCreateDuplicate:
             return "m_autofill_logins_settings_add-new-login_error_attempted-to-create-duplicate"
-            
+
+        case .autofillLoginsPasswordGenerationPromptDisplayed: return "m_autofill_logins_password_generation_prompt_displayed"
+        case .autofillLoginsPasswordGenerationPromptConfirmed: return "m_autofill_logins_password_generation_prompt_confirmed"
+        case .autofillLoginsPasswordGenerationPromptDismissed: return "m_autofill_logins_password_generation_prompt_dismissed"
+
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"
             
@@ -637,6 +676,29 @@ extension Pixel.Event {
             
         case .serpRequerySame: return "rq_0"
         case .serpRequeryNew: return "rq_1"
+            
+        // MARK: AppTP pixels
+
+        case .appTPBreakageReport: return "m_apptp_breakage_report"
+        case .appTPFailedToCreateProxyServer: return "m_apptp_failed_to_create_proxy_server"
+        case .appTPFailedToSetTunnelNetworkSettings: return "m_apptp_failed_to_set_tunnel_network_settings"
+        case .appTPFailedToAccessPreferences: return "m_apptp_failed_to_access_preferences"
+        case .appTPFailedToAccessPreferencesDuringSetup: return "m_apptp_failed_to_access_preferences_during_setup"
+        case .appTPFailedToStartTunnel: return "m_apptp_failed_to_start_tunnel"
+        case .appTPVPNCrash: return "m_apptp_vpn_crash"
+        case .appTPVPNDisconnect: return "m_apptp_vpn_disconnect"
+        case .appTPVPNSleep: return "m_apptp_vpn_sleep"
+        case .appTPVPNWake: return "m_apptp_vpn_wake"
+        case .appTPBlocklistParseFailed: return "m_apptp_blocklist_parse_failed"
+        case .appTPActiveUser: return "m_apptp_active_user"
+        case .appTPDBLocationFailed: return "m_apptp_db_location_not_found"
+        case .appTPDBStoreLoadFailure: return "m_apptp_db_store_load_failure"
+        case .appTPDBPersistentStoreLoadFailure: return "m_apptp_db_persistent_store_load_failure"
+        case .appTPDBHistoryFailure: return "m_apptp_db_history_failure"
+        case .appTPDBHistoryFetchFailure: return "m_apptp_db_history_fetch_failure"
+        case .appTPDBFeedbackTrackerFetchFailed: return "m_apptp_db_feedback_tracker_fetch_failed"
+        case .appTPDBTrackerStoreFailure: return "m_apptp_db_tracker_store_failure"
+        case .appTPCouldNotLoadDatabase: return "m_apptp_could_not_load_database"
 
         // MARK: remote messaging pixels
 
@@ -719,6 +781,8 @@ extension Pixel.Event {
         case .debugMissingTopFolderFixHasFavorites: return "m_d_missing_top_folder_has_favorites"
             
         case .debugCantSaveBookmarkFix: return "m_d_cant_save_bookmark_fix"
+
+        case .debugCannotClearObservationsDatabase: return "m_d_cannot_clear_observations_database"
             
         
         // MARK: Ad Attribution
@@ -747,6 +811,7 @@ extension Pixel.Event {
             
         case .bookmarksCouldNotLoadDatabase: return "m_d_bookmarks_could_not_load_database"
         case .bookmarksCouldNotPrepareDatabase: return "m_d_bookmarks_could_not_prepare_database"
+        case .bookmarksCleanupFailed: return "m_d_bookmarks_cleanup_failed"
         case .bookmarksMigrationAlreadyPerformed: return "m_d_bookmarks_migration_already_performed"
         case .bookmarksMigrationFailed: return "m_d_bookmarks_migration_failed"
         case .bookmarksMigrationCouldNotPrepareDatabase: return "m_d_bookmarks_migration_could_not_prepare_database"
@@ -755,10 +820,12 @@ extension Pixel.Event {
         case .bookmarksMigrationCouldNotValidateDatabase: return "m_d_bookmarks_migration_could_not_validate_database"
         case .bookmarksMigrationCouldNotRemoveOldStore: return "m_d_bookmarks_migration_could_not_remove_old_store"
 
+        case .syncSentUnauthenticatedRequest: return "m_d_sync_sent_unauthenticated_request"
+        case .syncMetadataCouldNotLoadDatabase: return "m_d_sync_metadata_could_not_load_database"
+        case .syncBookmarksProviderInitializationFailed: return "m_d_sync_bookmarks_provider_initialization_failed"
+        case .syncBookmarksFailed: return "m_d_sync_bookmarks_failed"
+
         case .invalidPayload(let configuration): return "m_d_\(configuration.rawValue)_invalid_payload".lowercased()
-            
-        case .experimentDailyFireButtonTapped: return "m_d_experiment_daily_fire_button_tapped"
-        case .experimentDailyFireButtonDataCleared: return "m_d_experiment_daily_fire_button_data_cleared"
         }
         
     }

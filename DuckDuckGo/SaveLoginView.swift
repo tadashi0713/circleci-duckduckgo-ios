@@ -20,13 +20,13 @@
 import SwiftUI
 import DuckUI
 import BrowserServicesKit
+import DesignResourcesKit
 
 struct SaveLoginView: View {
     enum LayoutType {
         case newUser
         case saveLogin
         case savePassword
-        case saveAdditionalLogin
         case updateUsername
         case updatePassword
     }
@@ -39,30 +39,32 @@ struct SaveLoginView: View {
     var layoutType: LayoutType {
         viewModel.layoutType
     }
-    
+
+    private var usernameDisplayString: String {
+        AutofillInterfaceUsernameTruncator.truncateUsername(viewModel.username, maxLength: 50)
+    }
+
     private var title: String {
         switch layoutType {
         case .newUser, .saveLogin:
             return UserText.autofillSaveLoginTitleNewUser
-        case .saveAdditionalLogin:
-            return UserText.autofillSaveLoginTitle
         case .savePassword:
             return UserText.autofillSavePasswordTitle
         case .updateUsername:
             return UserText.autofillUpdateUsernameTitle
         case .updatePassword:
-            return UserText.autofillUpdatePasswordTitle
+            return UserText.autofillUpdatePassword(for: usernameDisplayString)
         }
     }
     
     private var confirmButton: String {
         switch layoutType {
-        case .newUser, .saveLogin, .saveAdditionalLogin:
+        case .newUser, .saveLogin:
             return UserText.autofillSaveLoginSaveCTA
         case .savePassword:
             return UserText.autofillSavePasswordSaveCTA
         case .updateUsername:
-            return UserText.autofillUpdateLoginSaveCTA
+            return UserText.autofillUpdateUsernameSaveCTA
         case .updatePassword:
             return UserText.autofillUpdatePasswordSaveCTA
         }
@@ -115,7 +117,7 @@ struct SaveLoginView: View {
         Button {
             viewModel.cancelButtonPressed()
         } label: {
-            Image(systemName: "xmark")
+            Image("Close-24")
                 .resizable()
                 .scaledToFit()
                 .frame(width: Const.Size.closeButtonSize, height: Const.Size.closeButtonSize)
@@ -132,7 +134,7 @@ struct SaveLoginView: View {
                     .scaledToFit()
                     .frame(width: Const.Size.logoImage, height: Const.Size.logoImage)
                 Text(viewModel.accountDomain)
-                    .secondaryTextStyle()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
                     .font(Const.Fonts.titleCaption)
             }
 
@@ -181,14 +183,25 @@ struct SaveLoginView: View {
                 viewModel.save()
             } label: {
                 Text(confirmButton)
-            }.buttonStyle(PrimaryButtonStyle())
-            
+                        .font(Const.Fonts.CTA)
+                        .padding()
+                        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: Const.Size.CTAButtonMaxHeight - Const.Size.buttonBorderWidth)
+                        .foregroundColor(Const.Colors.CTAPrimaryForeground)
+                        .background(Const.Colors.CTAPrimaryBackground)
+                        .cornerRadius(Const.Size.CTAButtonCornerRadius)
+            }
+
             Button {
                 viewModel.cancelButtonPressed()
             } label: {
                 Text(UserText.autofillSaveLoginNotNowCTA)
+                        .font(Const.Fonts.CTA)
+                        .padding()
+                        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: Const.Size.CTAButtonMaxHeight - Const.Size.buttonBorderWidth)
+                        .foregroundColor(Const.Colors.CTASecondaryForeground)
+                        .background(Const.Colors.CTATertiaryBackground)
+                        .cornerRadius(Const.Size.CTAButtonCornerRadius)
             }
-            .buttonStyle(SecondaryButtonStyle())
         }
         .frame(width: isIPhonePortrait ? Const.Size.contentWidth : frame.width)
     }
@@ -210,38 +223,27 @@ struct SaveLoginView: View {
     @ViewBuilder
     private var contentView: some View {
         switch layoutType {
-        case .newUser, .saveLogin, .savePassword:
-            newUserContentView
-        case .saveAdditionalLogin:
-            additionalLoginContentView
-        case .updateUsername, .updatePassword:
-            updateContentView
+        case .newUser, .saveLogin, .savePassword, .updatePassword:
+            defaultContentView
+        case .updateUsername:
+            updateUsernameContentView
         }
     }
     
-    private var newUserContentView: some View {
-        Text(UserText.autofillSaveLoginMessageNewUser)
+    private var defaultContentView: some View {
+        Text(layoutType == .updatePassword ? UserText.autoUpdatePasswordMessage : UserText.autofillSaveLoginMessageNewUser)
             .font(Const.Fonts.subtitle)
-            .secondaryTextStyle()
+            .foregroundColor(Color(designSystemColor: .textSecondary))
             .multilineTextAlignment(.center)
             .padding(.horizontal, isSmallFrame ? Const.Size.paddingSmallDevice : Const.Size.paddingDefault)
             .frame(width: isIPhonePortrait ? Const.Size.contentWidth : frame.width)
             .fixedSize(horizontal: false, vertical: true)
     }
     
-    private var updateContentView: some View {
-        Text(verbatim: layoutType == .updatePassword ? viewModel.hiddenPassword : viewModel.username)
+    private var updateUsernameContentView: some View {
+        Text(verbatim: viewModel.usernameTruncated)
             .font(Const.Fonts.userInfo)
             .lineLimit(1)
-            .frame(maxWidth: .infinity)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, isSmallFrame ? Const.Size.paddingSmallDevice : Const.Size.paddingDefault)
-    }
-    
-    private var additionalLoginContentView: some View {
-        Text(verbatim: UserText.autofillAdditionalLoginInfoMessage)
-            .font(Const.Fonts.subtitle)
-            .secondaryTextStyle()
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
             .padding(.horizontal, isSmallFrame ? Const.Size.paddingSmallDevice : Const.Size.paddingDefault)
@@ -314,7 +316,7 @@ struct SaveLoginView_Previews: PreviewProvider {
             VStack {
                 let viewModelAdditionalLogin = SaveLoginViewModel(credentialManager: MockManager(),
                                                                   appSettings: AppDependencyProvider.shared.appSettings,
-                                                                  layoutType: .saveAdditionalLogin)
+                                                                  layoutType: .saveLogin)
                 SaveLoginView(viewModel: viewModelAdditionalLogin)
                 
                 let viewModelSavePassword = SaveLoginViewModel(credentialManager: MockManager(),
@@ -334,6 +336,7 @@ private enum Const {
         static let updatedInfo = Font.system(.callout)
         static let titleCaption = Font.system(.footnote)
         static let userInfo = Font.system(.footnote).weight(.bold)
+        static let CTA = Font(UIFont.boldAppFont(ofSize: 16))
     }
 
     enum Margin {
@@ -344,7 +347,7 @@ private enum Const {
     
     enum Size {
         static let contentWidth: CGFloat = 286
-        static let closeButtonSize: CGFloat = 13
+        static let closeButtonSize: CGFloat = 24
         static let closeButtonTappableArea: CGFloat = 44
         static let logoImage: CGFloat = 20
         static let smallDevice: CGFloat = 320
@@ -353,5 +356,20 @@ private enum Const {
         }
         static let paddingSmallDevice: CGFloat = 28
         static let paddingDefault: CGFloat = 30
+        static let CTAButtonCornerRadius: CGFloat = 12
+        static let buttonBorderWidth: CGFloat = 2
+        static let CTAButtonMaxHeight: CGFloat = 50
     }
+
+    enum Colors {
+        static let CTAPrimaryBackground = Color("CTAPrimaryBackground")
+        static let CTASecondaryBackground = Color("CTASecondaryBackground")
+        static let CTATertiaryBackground = Color("CTATertiaryBackground")
+        static let CTAPrimaryForeground = Color("CTAPrimaryForeground")
+        static let CTASecondaryForeground = Color("CTASecondaryForeground")
+        static let PrimaryTextColor = Color("PrimaryTextColor")
+        static let SecondaryTextColor = Color("SecondaryTextColor")
+        static let CTASecondaryBorder = Color("CTASecondaryBorder")
+    }
+
 }

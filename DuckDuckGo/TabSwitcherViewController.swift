@@ -18,9 +18,9 @@
 //
 
 import UIKit
+import Common
 import Core
 import WebKit
-import os.log
 import Bookmarks
 import Persistence
 
@@ -121,17 +121,16 @@ class TabSwitcherViewController: UIViewController {
     private func refreshDisplayModeButton(theme: Theme = ThemeManager.shared.currentTheme) {
         switch theme.currentImageSet {
         case .dark:
-            // Reverse colors (selection)
             if tabSwitcherSettings.isGridViewEnabled {
-                displayModeButton.setImage(UIImage(named: "TabsToggleList"), for: .normal)
+                displayModeButton.setImage(UIImage(named: "tabsToggleGrid-Dark"), for: .normal)
             } else {
-                displayModeButton.setImage(UIImage(named: "TabsToggleGrid"), for: .normal)
+                displayModeButton.setImage(UIImage(named: "tabsToggleList-Dark"), for: .normal)
             }
         case .light:
             if tabSwitcherSettings.isGridViewEnabled {
-                displayModeButton.setImage(UIImage(named: "TabsToggleGrid"), for: .normal)
+                displayModeButton.setImage(UIImage(named: "tabsToggleGrid-Light"), for: .normal)
             } else {
-                displayModeButton.setImage(UIImage(named: "TabsToggleList"), for: .normal)
+                displayModeButton.setImage(UIImage(named: "tabsToggleList-Light"), for: .normal)
             }
         }
     }
@@ -257,7 +256,7 @@ class TabSwitcherViewController: UIViewController {
             guard let link = tab.link else { return }
             if viewModel.bookmark(for: link.url) == nil {
                 viewModel.createBookmark(title: link.displayTitle, url: link.url)
-                favicons.loadFavicon(forDomain: link.url.host, intoCache: .bookmarks, fromCache: .tabs)
+                favicons.loadFavicon(forDomain: link.url.host, intoCache: .fireproof, fromCache: .tabs)
                 newCount += 1
             }
         }
@@ -303,7 +302,6 @@ class TabSwitcherViewController: UIViewController {
 
     @IBAction func onFirePressed(sender: AnyObject) {
         Pixel.fire(pixel: .forgetAllPressedTabSwitching)
-        DailyPixel.fire(pixel: .experimentDailyFireButtonTapped)
         
         if DaxDialogs.shared.shouldShowFireButtonPulse {
             let spec = DaxDialogs.shared.fireButtonEducationMessage()
@@ -472,7 +470,7 @@ extension TabSwitcherViewController: TabObserver {
         // Reloading when updates are processed will result in a crash
         guard !isProcessingUpdates else { return }
         
-        if let index = tabsModel.indexOf(tab: tab) {
+        if let index = tabsModel.indexOf(tab: tab), index < collectionView.numberOfItems(inSection: 0) {
             collectionView.reloadItems(at: [IndexPath(row: index, section: 0)])
         }
     }
