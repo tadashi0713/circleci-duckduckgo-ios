@@ -22,8 +22,8 @@ jobs:
     executor: << parameters.executor >>
     steps:
       - macos/preboot-simulator:
-          device: iPhone 13
-          version: "15.5"
+          device: iPhone 14
+          version: "16.4"
       - checkout
       - run: git submodule update --init --recursive
       - ruby/install-deps
@@ -38,8 +38,8 @@ jobs:
     executor: << parameters.executor >>
     steps:
       - macos/preboot-simulator:
-          device: iPhone 13
-          version: "15.5"
+          device: iPhone 14
+          version: "16.4"
       - checkout
       - run: git submodule update --init --recursive
       - ruby/install-deps

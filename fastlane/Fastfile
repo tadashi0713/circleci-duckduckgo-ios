@@ -7,7 +7,7 @@ end
 lane :unit_tests do
   run_tests(
     scheme: "UnitTests",
-    device: "iPhone 13 (15.5)",
+    device: "iPhone 14 (16.4)",
     derived_data_path: "dist"
   )
 end
@@ -15,7 +15,7 @@ end
 lane :integration_tests do
   run_tests(
     scheme: "IntegrationTests",
-    device: "iPhone 13 (15.5)",
+    device: "iPhone 14 (16.4)",
     derived_data_path: "dist"
   )
 end
@@ -23,7 +23,7 @@ end
 lane :atb_uitests do
   run_tests(
     scheme: "AtbUITests",
-    device: "iPhone 13 (15.5)",
+    device: "iPhone 14 (16.4)",
     derived_data_path: "dist"
   )
 end
@@ -31,7 +31,7 @@ end
 lane :performance_tests do
   run_tests(
     scheme: "PerformanceTests",
-    device: "iPhone 13 (15.5)",
+    device: "iPhone 14 (16.4)",
     derived_data_path: "dist"
   )
 end
