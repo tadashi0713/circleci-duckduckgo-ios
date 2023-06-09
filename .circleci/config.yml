@@ -9,6 +9,10 @@ executors:
     macos:
       xcode: 14.3.1
     resource_class: macos.x86.medium.gen2
+  m1_medium:
+    macos:
+      xcode: 14.3.1
+    resource_class: macos.m1.medium.gen1
   m1_large:
     macos:
       xcode: 14.3.1
@@ -49,32 +53,22 @@ jobs:
       - store_test_results:
           path: fastlane/report.xml
 
-  build:
-    parameters:
-      executor:
-        type: executor
-    executor: << parameters.executor >>
-    steps:
-      - checkout
-      - run: git submodule update --init --recursive
-      - ruby/install-deps
-      - run: bundle exec fastlane build
-
 workflows:
-  m1_large_workflow:
-    jobs:
-      - unit_test:
-          executor: m1_large
-      - integration_test:
-          executor: m1_large
-      - build:
-          executor: m1_large
-
   gen2_medium_workflow:
     jobs:
       - unit_test:
           executor: gen2_medium
       - integration_test:
           executor: gen2_medium
-      - build:
-          executor: gen2_medium
+  m1_medium_workflow:
+    jobs:
+      - unit_test:
+          executor: m1_medium
+      - integration_test:
+          executor: m1_medium
+  m1_large_workflow:
+    jobs:
+      - unit_test:
+          executor: m1_large
+      - integration_test:
+          executor: m1_large
